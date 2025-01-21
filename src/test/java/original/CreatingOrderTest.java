@@ -1,14 +1,17 @@
 package original;
 
+import com.github.javafaker.Faker;
 import io.qameta.allure.Description;
 import io.restassured.response.Response;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import original.requestbodies.RequestBodyForCreatingOrder;
 import original.stepsfortests.CreatingCourierSteps;
 import original.stepsfortests.CreatingOrderSteps;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static org.apache.http.HttpStatus.*;
 
@@ -42,17 +45,43 @@ public class CreatingOrderTest extends BaseTest {
 
     @Parameterized.Parameters
     public static Object[][] getData() {
-        return new Object[][]  {
-                {"Сергей", "Иванов", "Тибетская, 23 кв.", "15", "+7 900 123 45 67", 7, "2025-06-15", "Rukia, let's save the world", new String[]{"GREY", "BLACK"}},
-                {"Артем", "Пименов", "Москва, 55 кв.", "12", "+7 905 678 90 12", 6, "2025-03-21", "Everything is fine", new String[]{"GREY"}},
-                {"Борис", "Бритва", "Москва, 88/7", "10", "+7 701 123 45 67", 8, "2025-05-12", "Let's move forward", new String[]{"BLACK"}},
-                {"Сириус", "Блэк", "Москва, Азкабановая", "5", "+7 702 987 65 43", 9, "2025-08-08", "Apple time", null},
+        Faker faker = new Faker();
+
+        return new Object[][]{
+                generateOrderData(faker, new String[]{"GREY", "BLACK"}),
+
+                generateOrderData(faker, new String[]{"GREY"}),
+
+                generateOrderData(faker, new String[]{"BLACK"}),
+
+                generateOrderData(faker, null)
         };
+    }
+
+
+    private static Object[] generateOrderData(Faker faker, String[] color) {
+        return new Object[]{
+                faker.name().firstName(),
+                faker.name().lastName(),
+                faker.address().fullAddress(),
+                faker.number().digits(2),
+                faker.phoneNumber().phoneNumber(),
+                faker.number().numberBetween(1, 10),
+                generateFutureDate(faker),
+                faker.lorem().sentence(),
+                color
+        };
+    }
+
+
+    private static String generateFutureDate(Faker faker) {
+        LocalDate futureDate = LocalDate.now().plusDays(faker.number().numberBetween(1, 365));
+        return futureDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
     @Test
     @Description("Проверка успешного создания заказа")
-    public void CreatingOrder() {
+    public void creatingOrder() {
         RequestBodyForCreatingOrder requestBodyForCreatingOrder =
                 new RequestBodyForCreatingOrder(firstName, lastName, address, metroStation, phone, rentTime, deliveryDate, comment, color);
 
